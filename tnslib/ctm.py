@@ -138,6 +138,7 @@ class CTMEnv1x1InvSymm:
         self.c = np.ones((chi, chi), dtype=dtype)
         self.t1 = np.ones((chi, D0, chi), dtype=dtype)
         self.t2 = np.ones((chi, D1, chi), dtype=dtype)
+        self.rg_info = dict()
     def toarray1x1(self):
         t = tdot(
             tdot(self.c, self.t1, [1,0]),
@@ -233,6 +234,8 @@ def ctmrg_square_1x1_invsymm(a, chi, err=1e-6, env=None, max_iterations=10000000
             env.c = c
             env.t1 = t1
             env.t2 = t2
+            env.rg_info["svals_hmove"] = s1
+            env.rg_info["svals_vmove"] = s2
             return env, env2, curErr, (j+1)*iteration_bunch
         
         s3 = s1
@@ -242,6 +245,8 @@ def ctmrg_square_1x1_invsymm(a, chi, err=1e-6, env=None, max_iterations=10000000
     env.c = c
     env.t1 = t1
     env.t2 = t2
+    env.rg_info["svals_hmove"] = s1
+    env.rg_info["svals_vmove"] = s2
     return env, env2, curErr, max_iterations
 
 

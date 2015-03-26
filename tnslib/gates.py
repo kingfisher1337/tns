@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.linalg import expm
 
 delta = np.array([[1.,0],[0,1]])
 delta.flags.writeable = False
@@ -8,6 +9,12 @@ sigmax.flags.writeable = False
 
 sigmaz = np.array([[-1.0, 0.0], [0.0, 1.0]])
 sigmaz.flags.writeable = False
+
+"""
+<j,k| sigmaz sigmaz |l,m>
+"""
+sigmazsigmaz = np.fromfunction(lambda j,k,l,m: delta[j,l]*delta[k,m]*(-1)**(j+k), (2,2,2,2), dtype=int)
+sigmazsigmaz.flags.writeable = False
 
 def exp_sigmax(alpha):
     """
@@ -80,4 +87,21 @@ def exp_sigmaz_sigmaz_mpo(alpha):
 def exp_sigmaz_sigmaz_pepo_square(alpha):
     m = exp_sigmaz_sigmaz_mpo(alpha)
     return np.einsum(m, [0,2,6,3], m, [6,4,1,5])
+
+
+def imtime_evolution_from_pair_hamiltonian_mpo(h1, h2, tau):
+    p = h1.shape[0]
+    u1 = expm(-0.5*tau * h1)
+    u2 = expm(-tau * h2.reshape(p*p, p*p)).reshape(p,p,p,p).swapaxes(1,2).reshape(p*p, p*p)
+    r = np.linalg.matrix_rank(u2)
+    u,s,v = np.linalg.svd(u2)
+    u = np.dot(u[:,:r], np.diag(np.sqrt(s[:r]))).reshape(p,p,r)
+    v = np.dot(np.diag(np.sqrt(s[:r])), v[:r]).reshape(r,p,p)
+    g = np.einsum(u, [0,4,1], v, [3,4,2])
+    g = np.einsum(u1, [0,4], g, [4,1,5,3], u1, [5,2])
+    return g
+
+def imtime_evolution_from_pair_hamiltonian_pepo(h1, h2, tau):
+    g = imtime_evolution_from_pair_hamiltonian_mpo(h1, h2, tau)
+    return np.einsum(g, [0,2,6,3], g, [6,4,1,5])
 
