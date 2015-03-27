@@ -19,7 +19,6 @@ if chi > 1:
 
 mzops = [potts.magnetisationz_operator(q, j).reshape(q**2) for j in range(q)]
 
-
 def do_point(h, dh, mz2, env2):
     if verbose:
         print h
@@ -34,7 +33,7 @@ def do_point(h, dh, mz2, env2):
     mz = map(lambda op: np.abs(np.dot(oenv, op))/n, mzops)
     mzCmp = np.max(mz)
 
-    while np.abs(mzCmp-mz2) > 1e-2:
+    while np.abs(mzCmp-mz2) > 1e-2 and dh > 1e-10:
         mz2,env2 = do_point(h - dh / 2.0, dh / 2.0, mz2, env2)
         dh = dh / 2.0
     
