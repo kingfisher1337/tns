@@ -199,7 +199,7 @@ def ctmrg_square_2x2(a, b, chi, err=1e-6, max_iterations=1000000, iteration_bunc
             env.c4, env.c3, env.t3b, env.t3a, _ = _ctmrg_square_2x2_step(env.c4, env.c3, env.t4b, env.t4a, env.t2b, env.t2a, env.t3b, env.t3a, a, b, D, chi)
         
         curErr = np.max(np.abs(s-s2))
-        print "[ctmrg_square_2x2] {:d} iterations done; error is {:.15e}".format((j+1)*iteration_bunch, curErr)
+        #print "[ctmrg_square_2x2] {:d} iterations done; error is {:.15e}".format((j+1)*iteration_bunch, curErr)
         
         if curErr < err:
             return env, env2, curErr, (j+1)*iteration_bunch

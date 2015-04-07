@@ -101,18 +101,18 @@ def itebd_square(a, b, gx, gy, chi, ctmrgerr=1e-6, ctmrg_max_iterations=1000000,
     for j in xrange(tebd_max_iterations):
     
         #if j % 100 == 0:
-        print "[itebd_square] {:d} iterations done".format(j)
+        #print "[itebd_square] {:d} iterations done".format(j)
     
         env2 = env
         mz2 = mz
-        print "[itebd_square] start ctmrg now"
+        
         env, env2, err, num_iterations = ctm.ctmrg_square_2x2(aDL, bDL, chi, err=ctmrgerr, env=env2, iteration_bunch=10)
         xDL = einsum(einsum(a, [5,1,2,3,4], gates.sigmaz, [0,5]), [9,0,2,4,8], a.conj(), [9,1,3,5,7]).reshape(D**8)
         e = env.toarray1x1a(aDL, bDL).reshape(D**8)
         mz = dot(e, xDL) / dot(e, aDL.reshape(D**8))
         #if j % 10 == 0:
         if mz2 is not None:
-            print "[itebd_square] mz estimate: {:.15e}; err: {:.15e}".format(mz, np.abs(mz-mz2))
+            #print "[itebd_square] mz estimate: {:.15e}; err: {:.15e}".format(mz, np.abs(mz-mz2))
             if np.abs(mz-mz2) < 1e-6:
                 break
         
