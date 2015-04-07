@@ -5,7 +5,6 @@ import ctm
 import sys
 
 J = -1
-tau = 1e-3
 chi = int(sys.argv[1])
 
 p = 2
@@ -34,7 +33,7 @@ exit()
 for h in np.linspace(0, 4, 50):
     h = -h
     for tau in [1e-1, 1e-2, 1e-3]:
-        print "[tfi_groundstate_2d] h={:.15e}; tau={:.15e}".format(h, tau)
+        #print "[tfi_groundstate_2d] h={:.15e}; tau={:.15e}".format(h, tau)
         g1 = gates.exp_sigmax(-tau*h/2.0)
         g2 = gates.exp_sigmaz_sigmaz(-tau*J)
         gx = np.einsum(g2, [4,5,2,3], g1, [0,4], g1, [1,5])
