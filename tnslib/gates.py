@@ -103,5 +103,5 @@ def imtime_evolution_from_pair_hamiltonian_mpo(h1, h2, tau):
 
 def imtime_evolution_from_pair_hamiltonian_pepo(h1, h2, tau):
     g = imtime_evolution_from_pair_hamiltonian_mpo(h1, h2, tau)
-    return np.einsum(g, [0,2,6,3], g, [6,4,1,5])
+    return np.einsum(g, [0,2,6,4], g, [6,3,1,5])
 

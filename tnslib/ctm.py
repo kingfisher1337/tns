@@ -38,19 +38,96 @@ class CTMEnvironment2x2:
         t1 = tdot(t1, t2, [3,0])
         t3 = tdot(t3, t4, [3,0])
         return tdot(t1, t3, [[5,0],[0,5]])
-        #tdot(tdot(tdot(tdot(tdot(tdot(tdot(tdot(tdot(tdot(tdot(tdot(self.c1, self.t1b, [1,0]), t1a, [2,0]), c2, [3,0]), t2a, [3,0]), t2b, [4,0]), t2a, [5,0]), c3, [6,0]), t3b, [6,0]), t3a, [7,0]), c4, [8,0]), t4a, [8,0]), t4b, [[0,8], [2,0]])
-    def toarray_1x2(self, a, b):
+    def toarray2x2(self):
+        return self.toarray()
+    def toarray1x2ab(self, a, b):
+        """
+        C1----T1b----T1a----C2
+        |      |      |      |
+        |      0      1      |
+        |                    |
+        T4b--5          2--T2a
+        |                    |
+        |      4      3      |
+        |      |      |      |
+        T4a----b------a----T2b
+        |      |      |      |
+        C4----T3a----T3b----C3
+        """
+        e = self.toarray2x2()
+        return tdot(e, tdot(b,a,[1,3]), [[3,4,5,6],[4,5,1,2]]).swapaxes(3,5)
+    def toarray1x2ba(self, a, b):
         """
         C1----T1b----T1a----C2
         |      |      |      |
         T4b----a------b----T2a
         |      |      |      |
-        T4a--            --T2b
+        |      0      1      |
+        |                    |
+        T4a--5          2--T2b
+        |                    |
+        |      4      3      |
         |      |      |      |
         C4----T3a----T3b----C3
         """
-        e = self.toarray()
-        return tdot(a, tdot(b, e, [[0,1],[1,2]]), [[0,1,3],[2,1,7]])
+        e = self.toarray2x2()
+        return tdot(tdot(a,b,[1,3]), e, [[0,3,4,2],[0,1,2,7]])
+    def toarray2x1ab(self, a, b):
+        """
+        C1----T1b----T1a-----C2
+        |      |      |       |
+        |      |      0       |
+        T4b----a--5      1--T2a
+        |      |              |
+        T4a----b--4      2--T2b
+        |      |      3       |
+        |      |      |       |
+        C4----T3a----T3b-----C3
+        """
+        e = self.toarray2x2()
+        return tdot(e, tdot(b,a,[0,2]), [[0,5,6,7],[1,2,5,3]])
+    def toarray2x1ba(self, a, b):
+        """
+        C1-----T1b---T1a----C2
+        |       |     |      |
+        |       0     |      |
+        T4b--5     1--b----T2a
+        |             |      |
+        T4a--4     2--a----T2b
+        |       3     |      |
+        |       |     |      |
+        C4-----T3a---T3b----C3
+        """
+        e = self.toarray2x2()
+        return tdot(tdot(a,b,[0,2]), e, [[3,4,0,1],[1,2,3,4]]).swapaxes(0,2)
+    def toarray1x1a(self, a, b):
+        """
+        C1----T1b---T1a-----C2
+        |      |     |       |
+        |      |     |       |
+        T4b----a-----b-----T2a
+        |      |     |       |
+        |      |     0       |
+        T4a----b--3     1--T2b
+        |      |     2       |
+        |      |     |       |
+        C4----T3a---T3b-----C3
+        """
+        return tdot(b, self.toarray2x1ab(a,b), [[0,1,3],[0,1,5]])
+    def toarray1x1b(self):
+        """
+        C1-----T1b---T1a-----C2
+        |       |     |       |
+        |       |     |       |
+        T4b-----a-----b------T2a
+        |       |     |       |
+        |       0     |       |
+        T4a--3     1--a-----T2b
+        |       2     |       |
+        |       |     |       |
+        C4-----T3a---T3b-----C3
+        """
+        return tdot(a, self.toarray2x1ba(a,b), [[0,1,3],[0,1,5]])
 
 def _ctmrg_square_2x2_step_singlecol(c1, c4, t1, t3, t4a, t4b, a, b, D, chi):
     """
@@ -72,6 +149,8 @@ def _ctmrg_square_2x2_step_singlecol(c1, c4, t1, t3, t4a, t4b, a, b, D, chi):
     
     v,z = np.linalg.eigh(dot(c1, c1.conj().transpose()) + dot(c4.conj().transpose(), c4))
     idx = v.argsort()[::-1]
+    v1 = v[idx][:chi]
+    v1 /= dot(v1,v1)
     z = z[:,idx][:,:chi]
     
     c1 = dot(z.conj().transpose(), c1)
@@ -79,23 +158,25 @@ def _ctmrg_square_2x2_step_singlecol(c1, c4, t1, t3, t4a, t4b, a, b, D, chi):
     
     v,w = np.linalg.eigh(dot(q1, q1.conj().transpose()) + dot(q4.conj().transpose(), q4))
     idx = v.argsort()[::-1]
+    v2 = v[idx][:chi]
+    v2 /= dot(v2,v2)
     w = w[:,idx][:,:chi]
     
     t4a = tdot(tdot(w.conj(), t4a2, [0,0]), z, [2,0])
     t4b = tdot(tdot(z.conj(), t4b2, [0,0]), w, [2,0])
     
-    return c1, c4, t4a, t4b
+    return c1, c4, t4a, t4b, np.concatenate([v1,v2])
     
 def _ctmrg_square_2x2_step(c1, c4, t1a, t1b, t3a, t3b, t4a, t4b, a, b, D, chi):
-    c1, c4, t4a, t4b = _ctmrg_square_2x2_step_singlecol(c1, c4, t1b, t3a, t4a, t4b, a, b, D, chi)
-    c1, c4, t4a, t4b = _ctmrg_square_2x2_step_singlecol(c1, c4, t1a, t3b, t4b, t4a, b, a, D, chi)
+    c1, c4, t4a, t4b, s1 = _ctmrg_square_2x2_step_singlecol(c1, c4, t1b, t3a, t4a, t4b, a, b, D, chi)
+    c1, c4, t4a, t4b, s2 = _ctmrg_square_2x2_step_singlecol(c1, c4, t1a, t3b, t4b, t4a, b, a, D, chi)
     c1 /= np.max(np.abs(c1))
     c4 /= np.max(np.abs(c4))
     t4a /= np.max(np.abs(t4a))
     t4b /= np.max(np.abs(t4b))
-    return c1, c4, t4a, t4b
+    return c1, c4, t4a, t4b, np.concatenate([s1,s2])
 
-def ctmrg_square_2x2(a, b, chi, err=1e-6, maxIterations=100000, iterationBunch=100, env=None, convergenceTestFct=_ctm_array_dist):
+def ctmrg_square_2x2(a, b, chi, err=1e-6, max_iterations=1000000, iteration_bunch=1000, env=None):#, convergenceTestFct=_ctm_array_dist):
     D = a.shape[0]
     if not isinstance(env, CTMEnvironment2x2):
         env = CTMEnvironment2x2(D, chi, type(a[0,0,0,0]))
@@ -108,22 +189,33 @@ def ctmrg_square_2x2(a, b, chi, err=1e-6, maxIterations=100000, iterationBunch=1
     
     env2 = None
     curErr = None
+    s2 = -np.ones(4*chi) # first distance should be at least 4*chi
     
-    for j in xrange(maxIterations/iterationBunch):
-        for j2 in xrange(iterationBunch):
-            env.c1, env.c4, env.t4a, env.t4b = _ctmrg_square_2x2_step(env.c1, env.c4, env.t1a, env.t1b, env.t3a, env.t3b, env.t4a, env.t4b, a, b, D, chi)
-            env.c2, env.c1, env.t1b, env.t1a = _ctmrg_square_2x2_step(env.c2, env.c1, env.t2b, env.t2a, env.t4b, env.t4a, env.t1b, env.t1a, a, b, D, chi)
-            env.c3, env.c2, env.t2a, env.t2b = _ctmrg_square_2x2_step(env.c3, env.c2, env.t3a, env.t3b, env.t1a, env.t1b, env.t2a, env.t2b, a, b, D, chi)
-            env.c4, env.c3, env.t3b, env.t3a = _ctmrg_square_2x2_step(env.c4, env.c3, env.t4b, env.t4a, env.t2b, env.t2a, env.t3b, env.t3a, a, b, D, chi)
-            
+    for j in xrange(max_iterations/iteration_bunch):
+        for j2 in xrange(iteration_bunch):
+            env.c1, env.c4, env.t4a, env.t4b, s = _ctmrg_square_2x2_step(env.c1, env.c4, env.t1a, env.t1b, env.t3a, env.t3b, env.t4a, env.t4b, a, b, D, chi)
+            env.c2, env.c1, env.t1b, env.t1a, _ = _ctmrg_square_2x2_step(env.c2, env.c1, env.t2b, env.t2a, env.t4b, env.t4a, env.t1b, env.t1a, a, b, D, chi)
+            env.c3, env.c2, env.t2a, env.t2b, _ = _ctmrg_square_2x2_step(env.c3, env.c2, env.t3a, env.t3b, env.t1a, env.t1b, env.t2a, env.t2b, a, b, D, chi)
+            env.c4, env.c3, env.t3b, env.t3a, _ = _ctmrg_square_2x2_step(env.c4, env.c3, env.t4b, env.t4a, env.t2b, env.t2a, env.t3b, env.t3a, a, b, D, chi)
+        
+        curErr = np.max(np.abs(s-s2))
+        print "[ctmrg_square_2x2] {:d} iterations done; error is {:.15e}".format((j+1)*iteration_bunch, curErr)
+        
+        if curErr < err:
+            return env, env2, curErr, (j+1)*iteration_bunch
+        env2 = copy(env)
+        s2 = s
+        
+        """
         if env2 is not None:
             curErr = convergenceTestFct(env, env2)
             if curErr < err:
                 return env, curErr
+        """
     
         env2 = copy(env)
 
-    return env, curErr
+    return env, env2, curErr, max_iterations
 
 
 class CTMEnv1x1InvSymm:
@@ -146,10 +238,33 @@ class CTMEnv1x1InvSymm:
             [2,0])
         return tdot(t, t.conj(), [[3,0],[0,3]])
     def toarray1x2(self):
+        """
+        c-----t1---t1------c*
+        |      |    |      |
+        |      0    1      |
+        t2--5          2--t2*
+        |      4    3      |
+        |      |    |      |
+        c*----t1*--t1*-----c
+        """
         t = tdot(self.c, self.t1, [1,0])
         t = tdot(t, t.conj(), [2,2])
         t = tdot(t, self.t2.conj(), [2,0])
         return tdot(t, t.conj(), [[0,4],[4,0]])
+    def toarray2x1(self):
+        """
+        c-------t1-------c*
+        |        |       |
+        t2--5    0   1--t2*
+        |                |
+        t2--4    3   2--t2*
+        |        |       |
+        c*------t1*------c
+        """
+        t = tdot(self.c.conj(), self.t2.conj(), [1,0])
+        t = tdot(t, t.conj(), [2,2])
+        t = tdot(self.t1, t, [2,0])
+        return tdot(t, t.conj(), [[0,3],[3,0]])
     def halfplane_upper(self, num_links):
         x = self.c
         for j in xrange(num_links):
